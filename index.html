@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gasolineras Cercanas</title>
+  <!-- Enlazar el archivo CSS (asumimos que styles.css está en la raíz del repositorio) -->
   <link rel="stylesheet" href="styles.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Enlazar Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Enlazar Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
   <div class="container">
@@ -20,11 +23,16 @@
       
       <button id="filterStations">Filtrar Gasolineras</button>
     </div>
+    <!-- El mapa se muestra aquí -->
     <div id="map"></div>
+    <!-- Lista de estaciones de servicio -->
     <div id="station-list"></div>
   </div>
+  
+  <!-- Enlazar el archivo JavaScript -->
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
