@@ -1,7 +1,7 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
-const ROUTE_API_URL = "https://api.openrouteservice.org/v2/directions/driving-car"; // URL de OpenRouteService
-const API_KEY = "TU_CLAVE_API"; // Reemplaza con tu clave de API de OpenRouteService
+const GOOGLE_MAPS_API_URL = "https://maps.googleapis.com/maps/api/directions/json"; // URL de Google Directions API
+const API_KEY = "TU_CLAVE_API"; // Aquí debes poner tu clave de API de Google
 
 // Configuración inicial del mapa
 const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro en Madrid inicialmente
@@ -45,7 +45,7 @@ function showStationsInRange(radius, maxPrice) {
 
   stations.forEach((station) => {
     try {
-      const lat = parseFloat(station["Latitud"].replace(",", "."));
+      const lat = parseFloat(station["Latitud"].replace(",", ".")); 
       const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
       const distance = haversineDistance(userLat, userLon, lat, lon);
       const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", ".")) || 0;
@@ -105,7 +105,7 @@ async function showRouteToStation(stationLat, stationLon) {
   }
 
   const [userLat, userLon] = userLocation;
-  const routeUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${userLat},${userLon}&destination=${stationLat},${stationLon}&key=AIzaSyB20Q9jR-kc39RpOgTxTztGtj3jUOOv1H8`;
+  const routeUrl = `${GOOGLE_MAPS_API_URL}?origin=${userLat},${userLon}&destination=${stationLat},${stationLon}&key=${API_KEY}`;
 
   try {
     const response = await fetch(routeUrl);
