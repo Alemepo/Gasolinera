@@ -1,0 +1,85 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Ocupa toda la altura de la ventana */
+}
+
+h1 {
+  text-align: center;
+  margin: 10px 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+input {
+  width: 60px;
+  margin-right: 10px;
+  text-align: center;
+}
+
+button {
+  padding: 5px 10px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#map {
+  flex-grow: 1; /* Ocupa el espacio restante en el contenedor */
+  width: 100%; /* Asegura que ocupe todo el ancho */
+  height: 60%; /* La altura del mapa será el 60% de la pantalla */
+  border: 1px solid #ccc;
+}
+
+#station-list {
+  height: 40%; /* La lista de gasolineras ocupará el 40% restante */
+  overflow-y: auto;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+  background-color: #f9f9f9;
+}
+
+.station-card {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.station-card h3 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+
+.station-card p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+
