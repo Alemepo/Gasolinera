@@ -1,7 +1,7 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
-const ROUTE_API_URL = "https://maps.googleapis.com/maps/api/directions/json"; // Usamos la API de Google Maps para obtener la ruta
-const API_KEY = "AIzaSyB20Q9jR-kc39RpOgTxTztGtj3jUOOv1H8";
+const ROUTE_API_URL = "https://api.openrouteservice.org/v2/directions/driving-car"; // Usamos OpenRouteService
+const API_KEY = "5b3ce3597851110001cf6248b48e1e3a23e64a9b02e19cd97b30b2e498d00b53"; // Tu clave de OpenRouteService
 
 // Configuración inicial del mapa
 const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro en Madrid inicialmente
@@ -105,15 +105,15 @@ async function showRouteToStation(stationLat, stationLon) {
   }
 
   const [userLat, userLon] = userLocation;
-  const routeUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${userLat},${userLon}&destination=${stationLat},${stationLon}&key=${API_KEY}`;
+  const routeUrl = `${ROUTE_API_URL}?api_key=${API_KEY}&start=${userLon},${userLat}&end=${stationLon},${stationLat}`;
 
   try {
     const response = await fetch(routeUrl);
     const data = await response.json();
 
     if (data.routes && data.routes[0]) {
-      const route = data.routes[0].legs[0];
-      const steps = route.steps.map(step => [step.end_location.lat, step.end_location.lng]);
+      const route = data.routes[0].segments[0];
+      const steps = route.steps.map(step => [step.end_lon, step.end_lat]);
 
       // Añadir la ruta al mapa
       L.polyline(steps, { color: 'blue', weight: 5, opacity: 0.7 }).addTo(map);
@@ -158,6 +158,7 @@ navigator.geolocation.getCurrentPosition((position) => {
 }, (error) => {
   alert("No se pudo obtener la ubicación del usuario.");
 });
+
 
 
 
