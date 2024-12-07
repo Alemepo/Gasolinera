@@ -12,6 +12,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 // Variables globales
 let userLocation = null;
+let userMarker = null; // Para el marcador de la ubicación del usuario
 let stations = [];
 
 // Función para cargar estaciones desde la API
@@ -36,9 +37,9 @@ function showStationsInRange(radius, maxPrice) {
     return;
   }
 
-  // Limpia marcadores existentes
+  // Limpia los marcadores de estaciones, pero no el marcador de la ubicación del usuario
   map.eachLayer((layer) => {
-    if (layer instanceof L.Marker) map.removeLayer(layer);
+    if (layer instanceof L.Marker && layer !== userMarker) map.removeLayer(layer);
   });
 
   const [userLat, userLon] = userLocation;
@@ -163,7 +164,7 @@ function decodePolyline(encoded) {
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+  const dLon = toRad(lat2 - lon1);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -179,7 +180,9 @@ navigator.geolocation.getCurrentPosition(
   (position) => {
     userLocation = [position.coords.latitude, position.coords.longitude];
     map.setView(userLocation, 14);
-    L.marker(userLocation, { title: "Tu ubicación" })
+
+    // Crear marcador persistente para la ubicación del usuario
+    userMarker = L.marker(userLocation, { title: "Tu ubicación" })
       .addTo(map)
       .bindPopup("<strong>Tu ubicación</strong>")
       .openPopup();
