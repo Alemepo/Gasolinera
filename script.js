@@ -1,6 +1,6 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
-const BACKEND_URL = "https://<tu-url-en-render>.onrender.com"; // Reemplaza con la URL de tu backend
+const BACKEND_URL = "https://rutas-d6ev.onrender.com"; // Tu URL pública del backend
 
 const map = L.map("map").setView([40.4168, -3.7038], 12);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -131,7 +131,7 @@ function decodePolyline(encoded) {
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+  const dLon = toRad(lat2 - lon1);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -147,6 +147,7 @@ navigator.geolocation.getCurrentPosition((position) => {
   map.setView(userLocation, 12);
   loadStations();
 });
+
 
 
 
