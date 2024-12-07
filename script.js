@@ -1,162 +1,120 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
-const ROUTE_API_URL = "https://api.openrouteservice.org/v2/directions/driving-car"; // Usamos OpenRouteService
-const API_KEY = "5b3ce3597851110001cf6248b48e1e3a23e64a9b02e19cd97b30b2e498d00b53"; // Tu clave de OpenRouteService
+const ROUTE_API_URL = "https://api.openrouteservice.org/v2/directions/driving-car";
+const API_KEY = "5b3ce3597851110001cf6248b48e1e3a23e64a9b02e19cd97b30b2e498d00b53";
 
-// Configuración inicial del mapa
-const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro en Madrid inicialmente
+const map = L.map("map").setView([40.4168, -3.7038], 12);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
 }).addTo(map);
 
-// Variables globales
 let userLocation = null;
 let stations = [];
 
-// Obtener las estaciones de servicio
+document.getElementById("filterStations").addEventListener("click", () => {
+  const radius = parseFloat(document.getElementById("distance").value);
+  const maxPrice = parseFloat(document.getElementById("price").value);
+  
+  if (isNaN(radius) || radius <= 0 || isNaN(maxPrice) || maxPrice <= 0) {
+    alert("Por favor, introduce valores válidos.");
+    return;
+  }
+
+  showLoading(true);
+  showStationsInRange(radius, maxPrice);
+  showLoading(false);
+});
+
+function showLoading(show) {
+  const spinner = document.getElementById("loading-spinner");
+  if (show) {
+    spinner.classList.remove("hidden");
+  } else {
+    spinner.classList.add("hidden");
+  }
+}
+
 async function loadStations() {
   try {
     const response = await fetch(API_URL);
     const data = await response.json();
     stations = data.ListaEESSPrecio;
-    console.log("Gasolineras cargadas:", stations.length);
-    showStationsInRange(5, 1.50); // Mostrar gasolineras por defecto al cargar la página
+    showStationsInRange(5, 1.50);
   } catch (error) {
-    console.error("Error al cargar los datos de las estaciones:", error);
+    console.error("Error al cargar gasolineras:", error);
     alert("No se pudieron cargar las gasolineras.");
   }
 }
 
-// Función para mostrar gasolineras filtradas
 function showStationsInRange(radius, maxPrice) {
-  map.eachLayer((layer) => {
-    if (layer instanceof L.Marker && !layer.options.title) {
-      map.removeLayer(layer); // Limpiar marcadores antiguos
-    }
-  });
-
   if (!userLocation) {
-    alert("No se pudo obtener la ubicación del usuario.");
+    alert("Ubicación del usuario no disponible.");
     return;
   }
 
-  const [userLat, userLon] = userLocation;
-  const stationList = [];
-
-  stations.forEach((station) => {
-    try {
-      const lat = parseFloat(station["Latitud"].replace(",", "."));
-      const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
-      const distance = haversineDistance(userLat, userLon, lat, lon);
-      const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", ".")) || 0;
-
-      // Aplicar filtros: distancia y precio
-      if (distance <= radius && price95 <= maxPrice) {
-        const name = station["Rótulo"] || "Sin nombre";
-        const address = station["Dirección"] || "Dirección desconocida";
-
-        // Crear tarjeta de gasolinera
-        stationList.push({ lat, lon, name, price95, distance });
-
-        // Mostrar el marcador en el mapa
-        const marker = L.marker([lat, lon]).addTo(map).bindPopup(`
-          <div style="text-align: center;">
-            <strong>${name}</strong><br>
-            Dirección: ${address}<br>
-            Precio Gasolina 95: <strong>${price95} €</strong><br>
-            Distancia: ${distance.toFixed(2)} km
-            <br><br>
-            <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
-          </div>
-        `);
-      }
-    } catch (err) {
-      console.warn("Error procesando una estación:", err);
-    }
+  map.eachLayer((layer) => {
+    if (layer instanceof L.Marker && !layer.options.title) map.removeLayer(layer);
   });
 
-  // Mostrar las estaciones en la lista debajo del mapa
-  updateStationList(stationList);
+  const [userLat, userLon] = userLocation;
+  const filteredStations = stations.filter((station) => {
+    const lat = parseFloat(station["Latitud"].replace(",", "."));
+    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
+    const distance = haversineDistance(userLat, userLon, lat, lon);
+    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+    return distance <= radius && price <= maxPrice;
+  });
+
+  filteredStations.forEach((station) => {
+    const lat = parseFloat(station["Latitud"].replace(",", "."));
+    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
+    const name = station["Rótulo"];
+    const address = station["Dirección"];
+    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+
+    L.marker([lat, lon]).addTo(map).bindPopup(`
+      <strong>${name}</strong><br>
+      Dirección: ${address}<br>
+      Precio: ${price.toFixed(2)} €<br>
+    `);
+  });
+
+  updateStationList(filteredStations);
 }
 
-// Mostrar la lista de gasolineras filtradas
-function updateStationList(stationList) {
-  const stationListDiv = document.getElementById("station-list");
-  stationListDiv.innerHTML = ""; // Limpiar la lista antes de llenarla
+function updateStationList(stations) {
+  const listDiv = document.getElementById("station-list");
+  listDiv.innerHTML = "";
 
-  stationList.forEach((station) => {
+  stations.forEach((station) => {
     const card = document.createElement("div");
     card.classList.add("station-card");
     card.innerHTML = `
-      <h3>${station.name}</h3>
-      <p>Precio Gasolina 95: ${station.price95} €</p>
-      <p>Distancia: ${station.distance.toFixed(2)} km</p>
-      <button onclick="showRouteToStation(${station.lat}, ${station.lon})">Ver Ruta</button>
+      <h3>${station["Rótulo"]}</h3>
+      <p>Precio: ${parseFloat(station["Precio Gasolina 95 E5"]).toFixed(2)} €</p>
     `;
-    stationListDiv.appendChild(card);
+    listDiv.appendChild(card);
   });
 }
 
-// Función para obtener la ruta desde la ubicación del usuario hasta la gasolinera seleccionada
-async function showRouteToStation(stationLat, stationLon) {
-  if (!userLocation) {
-    alert("No se pudo obtener la ubicación del usuario.");
-    return;
-  }
-
-  const [userLat, userLon] = userLocation;
-  const routeUrl = `${ROUTE_API_URL}?api_key=${API_KEY}&start=${userLon},${userLat}&end=${stationLon},${stationLat}`;
-
-  try {
-    const response = await fetch(routeUrl);
-    const data = await response.json();
-
-    if (data.routes && data.routes[0]) {
-      const route = data.routes[0].segments[0];
-      const steps = route.steps.map(step => [step.end_lon, step.end_lat]);
-
-      // Añadir la ruta al mapa
-      L.polyline(steps, { color: 'blue', weight: 5, opacity: 0.7 }).addTo(map);
-
-      // Mostrar distancia y tiempo estimado
-      const distance = route.distance / 1000; // km
-      const duration = route.duration / 60; // minutos
-      alert(`Distancia: ${distance.toFixed(2)} km\nTiempo estimado: ${duration.toFixed(0)} minutos`);
-    } else {
-      alert("No se pudo calcular la ruta.");
-    }
-  } catch (error) {
-    console.error("Error al obtener la ruta:", error);
-    alert("Hubo un problema al calcular la ruta.");
-  }
-}
-
-// Calcular la distancia entre dos puntos usando la fórmula Haversine
 function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radio de la Tierra en km
+  const R = 6371;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distancia en km
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
 
-// Inicializar la localización y cargar estaciones
 navigator.geolocation.getCurrentPosition((position) => {
   userLocation = [position.coords.latitude, position.coords.longitude];
   map.setView(userLocation, 12);
   loadStations();
-}, (error) => {
-  alert("No se pudo obtener la ubicación del usuario.");
 });
 
 
