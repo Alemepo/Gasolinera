@@ -1,7 +1,7 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
-const ROUTE_API_URL = "https://api.openrouteservice.org/v2/directions/driving-car";
-const API_KEY = "5b3ce3597851110001cf6248b48e1e3a23e64a9b02e19cd97b30b2e498d00b53";
+const GOOGLE_API_KEY = "AIzaSyB20Q9jR-kc39RpOgTxTztGtj3jUOOv1H8";
+const GOOGLE_API_URL = "https://maps.googleapis.com/maps/api/directions/json";
 
 const map = L.map("map").setView([40.4168, -3.7038], 12);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -14,25 +14,14 @@ let stations = [];
 document.getElementById("filterStations").addEventListener("click", () => {
   const radius = parseFloat(document.getElementById("distance").value);
   const maxPrice = parseFloat(document.getElementById("price").value);
-  
+
   if (isNaN(radius) || radius <= 0 || isNaN(maxPrice) || maxPrice <= 0) {
     alert("Por favor, introduce valores válidos.");
     return;
   }
 
-  showLoading(true);
   showStationsInRange(radius, maxPrice);
-  showLoading(false);
 });
-
-function showLoading(show) {
-  const spinner = document.getElementById("loading-spinner");
-  if (show) {
-    spinner.classList.remove("hidden");
-  } else {
-    spinner.classList.add("hidden");
-  }
-}
 
 async function loadStations() {
   try {
@@ -79,30 +68,6 @@ function showStationsInRange(radius, maxPrice) {
       <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `);
   });
-
-  updateStationList(filteredStations);
-}
-
-function updateStationList(stations) {
-  const listDiv = document.getElementById("station-list");
-  listDiv.innerHTML = "";
-
-  stations.forEach((station) => {
-    const card = document.createElement("div");
-    card.classList.add("station-card");
-
-    const lat = parseFloat(station["Latitud"].replace(",", "."));
-    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
-    const name = station["Rótulo"];
-    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
-
-    card.innerHTML = `
-      <h3>${name}</h3>
-      <p>Precio: ${price.toFixed(2)} €</p>
-      <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
-    `;
-    listDiv.appendChild(card);
-  });
 }
 
 async function showRouteToStation(lat, lon) {
@@ -112,28 +77,54 @@ async function showRouteToStation(lat, lon) {
   }
 
   const [userLat, userLon] = userLocation;
-  const routeUrl = `${ROUTE_API_URL}?api_key=${API_KEY}&start=${userLon},${userLat}&end=${lon},${lat}`;
+  const routeUrl = `${GOOGLE_API_URL}?origin=${userLat},${userLon}&destination=${lat},${lon}&key=${GOOGLE_API_KEY}`;
 
   try {
     const response = await fetch(routeUrl);
     const data = await response.json();
 
-    if (data.routes && data.routes[0]) {
-      const route = data.routes[0].segments[0];
-      const steps = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+    const points = data.routes[0].overview_polyline.points;
+    const polyline = L.polyline(decodePolyline(points), { color: "blue" }).addTo(map);
 
-      L.polyline(steps, { color: 'blue', weight: 5, opacity: 0.7 }).addTo(map);
-
-      const distance = route.distance / 1000;
-      const duration = route.duration / 60;
-      alert(`Distancia: ${distance.toFixed(2)} km\nTiempo estimado: ${duration.toFixed(0)} minutos`);
-    } else {
-      alert("No se pudo calcular la ruta.");
-    }
+    const distance = data.routes[0].legs[0].distance.text;
+    const duration = data.routes[0].legs[0].duration.text;
+    alert(`Distancia: ${distance}\nDuración: ${duration}`);
   } catch (error) {
     console.error("Error al obtener la ruta:", error);
     alert("Hubo un problema al calcular la ruta.");
   }
+}
+
+function decodePolyline(encoded) {
+  let points = [];
+  let index = 0,
+    lat = 0,
+    lng = 0;
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
+
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+
+  return points;
 }
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
