@@ -22,15 +22,36 @@ document.getElementById("filterStations").addEventListener("click", () => {
   showStationsInRange(radius, maxPrice);
 });
 
+navigator.geolocation.getCurrentPosition(
+  (position) => {
+    userLocation = [position.coords.latitude, position.coords.longitude];
+    console.log("Ubicación del usuario:", userLocation);
+    map.setView(userLocation, 12); // Centra el mapa
+    loadStations(); // Carga las estaciones
+  },
+  (error) => {
+    console.error("Error al obtener la ubicación:", error.message);
+    alert("No se pudo obtener tu ubicación. Habilita la geolocalización.");
+  }
+);
+
 async function loadStations() {
   try {
+    console.log("Cargando estaciones de servicio...");
     const response = await fetch(API_URL);
+    if (!response.ok) throw new Error("Error al cargar estaciones.");
     const data = await response.json();
+
+    if (!data.ListaEESSPrecio) {
+      throw new Error("Datos de estaciones no válidos.");
+    }
+
     stations = data.ListaEESSPrecio;
-    showStationsInRange(5, 1.50);
+    console.log("Estaciones cargadas:", stations.length);
+    showStationsInRange(5, 1.50); // Mostrar gasolineras dentro de un rango por defecto
   } catch (error) {
-    console.error("Error al cargar gasolineras:", error);
-    alert("No se pudieron cargar las gasolineras.");
+    console.error("Error al cargar estaciones:", error.message);
+    alert("No se pudieron cargar las estaciones de servicio. Intenta nuevamente más tarde.");
   }
 }
 
@@ -66,6 +87,30 @@ function showStationsInRange(radius, maxPrice) {
       Precio: ${price.toFixed(2)} €<br>
       <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `);
+  });
+
+  updateStationList(filteredStations);
+}
+
+function updateStationList(stations) {
+  const listDiv = document.getElementById("station-list");
+  listDiv.innerHTML = ""; // Limpia la lista antes de actualizarla
+
+  stations.forEach((station) => {
+    const card = document.createElement("div");
+    card.classList.add("station-card");
+
+    const lat = parseFloat(station["Latitud"].replace(",", "."));
+    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
+    const name = station["Rótulo"];
+    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+
+    card.innerHTML = `
+      <h3>${name}</h3>
+      <p>Precio: ${price.toFixed(2)} €</p>
+      <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
+    `;
+    listDiv.appendChild(card);
   });
 }
 
@@ -141,14 +186,5 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
-
-navigator.geolocation.getCurrentPosition((position) => {
-  userLocation = [position.coords.latitude, position.coords.longitude];
-  map.setView(userLocation, 12);
-  loadStations();
-});
-
-
-
 
 
