@@ -10,7 +10,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 let userLocation = null;
 let userMarker = null; // Para el marcador de la ubicación del usuario
-let stations = [];
+let stations = []; // Lista global de estaciones
 
 // Obtener la ubicación del usuario
 navigator.geolocation.getCurrentPosition(
@@ -56,19 +56,27 @@ function showStationsInRange(radius, maxPrice) {
     return;
   }
 
-  // Limpiar todos los marcadores, excepto el del usuario
+  // Limpia todos los marcadores, excepto el del usuario
   map.eachLayer((layer) => {
     if (layer instanceof L.Marker && layer !== userMarker) map.removeLayer(layer);
   });
 
   const [userLat, userLon] = userLocation;
 
+  // Filtrar estaciones con datos válidos
   const filteredStations = stations.filter((station) => {
     try {
       const lat = parseFloat(station["Latitud"].replace(",", "."));
       const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
-      const distance = haversineDistance(userLat, userLon, lat, lon);
       const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+      const distance = haversineDistance(userLat, userLon, lat, lon);
+
+      // Validar coordenadas y precios
+      if (isNaN(lat) || isNaN(lon) || isNaN(price95)) {
+        console.warn(`Estación inválida ignorada: ${station["Rótulo"]}`);
+        return false;
+      }
+
       return distance <= radius && price95 <= maxPrice;
     } catch (error) {
       console.warn("Error procesando una estación:", error.message);
@@ -199,3 +207,4 @@ document.getElementById("filterStations").addEventListener("click", () => {
   const maxPrice = parseFloat(document.getElementById("price").value);
   showStationsInRange(radius, maxPrice);
 });
+
