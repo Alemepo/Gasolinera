@@ -1,6 +1,8 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
 const BACKEND_URL = "https://rutas-d6ev.onrender.com"; // URL de tu backend
+const GOOGLE_API_URL = "https://maps.googleapis.com/maps/api/directions/json"; // URL de Google Maps Directions
+const API_KEY = "AIzaSyB20Q9jR-kc39RpOgTxTztGtj3jUOOv1H8"; // Tu clave API de Google Maps
 
 // Configuración inicial del mapa
 const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro en Madrid inicialmente
@@ -10,7 +12,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 // Variables globales
 let userLocation = null;
-let userMarker = null; // Para el marcador de la ubicación del usuario
 let stations = [];
 
 // Función para cargar estaciones desde la API
@@ -35,11 +36,9 @@ function showStationsInRange(radius, maxPrice) {
     return;
   }
 
-  // Limpia los marcadores de estaciones, pero no el marcador de la ubicación del usuario
+  // Limpia marcadores existentes
   map.eachLayer((layer) => {
-    if (layer instanceof L.Marker && layer !== userMarker) {
-      map.removeLayer(layer);
-    }
+    if (layer instanceof L.Marker) map.removeLayer(layer);
   });
 
   const [userLat, userLon] = userLocation;
@@ -164,7 +163,7 @@ function decodePolyline(encoded) {
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lat2 - lon1);
+  const dLon = toRad(lon2 - lon1);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -180,14 +179,10 @@ navigator.geolocation.getCurrentPosition(
   (position) => {
     userLocation = [position.coords.latitude, position.coords.longitude];
     map.setView(userLocation, 14);
-
-    // Crear marcador persistente para la ubicación del usuario
-    if (!userMarker) {
-      userMarker = L.marker(userLocation, { title: "Tu ubicación" })
-        .addTo(map)
-        .bindPopup("<strong>Tu ubicación</strong>")
-        .openPopup();
-    }
+    L.marker(userLocation, { title: "Tu ubicación" })
+      .addTo(map)
+      .bindPopup("<strong>Tu ubicación</strong>")
+      .openPopup();
     loadStations();
   },
   (error) => {
@@ -203,5 +198,6 @@ document.getElementById("filterStations").addEventListener("click", () => {
   const maxPrice = parseFloat(document.getElementById("price").value);
   showStationsInRange(radius, maxPrice);
 });
+
 
 
