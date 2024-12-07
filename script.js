@@ -1,7 +1,6 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
-const GOOGLE_API_KEY = "AIzaSyB20Q9jR-kc39RpOgTxTztGtj3jUOOv1H8";
-const GOOGLE_API_URL = "https://maps.googleapis.com/maps/api/directions/json";
+const BACKEND_URL = "https://<tu-url-en-render>.onrender.com"; // Reemplaza con la URL de tu backend
 
 const map = L.map("map").setView([40.4168, -3.7038], 12);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -77,10 +76,12 @@ async function showRouteToStation(lat, lon) {
   }
 
   const [userLat, userLon] = userLocation;
-  const routeUrl = `${GOOGLE_API_URL}?origin=${userLat},${userLon}&destination=${lat},${lon}&key=${GOOGLE_API_KEY}`;
+  const routeUrl = `${BACKEND_URL}/directions?origin=${userLat},${userLon}&destination=${lat},${lon}`;
 
   try {
     const response = await fetch(routeUrl);
+    if (!response.ok) throw new Error("Error al obtener la ruta del backend.");
+
     const data = await response.json();
 
     const points = data.routes[0].overview_polyline.points;
