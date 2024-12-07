@@ -1,8 +1,6 @@
 const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
 const BACKEND_URL = "https://rutas-d6ev.onrender.com"; // URL de tu backend
-const GOOGLE_API_URL = "https://maps.googleapis.com/maps/api/directions/json"; // URL de Google Maps Directions
-const API_KEY = "AIzaSyB20Q9jR-kc39RpOgTxTztGtj3jUOOv1H8"; // Tu clave API de Google Maps
 
 // Configuración inicial del mapa
 const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro en Madrid inicialmente
@@ -39,7 +37,9 @@ function showStationsInRange(radius, maxPrice) {
 
   // Limpia los marcadores de estaciones, pero no el marcador de la ubicación del usuario
   map.eachLayer((layer) => {
-    if (layer instanceof L.Marker && layer !== userMarker) map.removeLayer(layer);
+    if (layer instanceof L.Marker && layer !== userMarker) {
+      map.removeLayer(layer);
+    }
   });
 
   const [userLat, userLon] = userLocation;
@@ -182,10 +182,12 @@ navigator.geolocation.getCurrentPosition(
     map.setView(userLocation, 14);
 
     // Crear marcador persistente para la ubicación del usuario
-    userMarker = L.marker(userLocation, { title: "Tu ubicación" })
-      .addTo(map)
-      .bindPopup("<strong>Tu ubicación</strong>")
-      .openPopup();
+    if (!userMarker) {
+      userMarker = L.marker(userLocation, { title: "Tu ubicación" })
+        .addTo(map)
+        .bindPopup("<strong>Tu ubicación</strong>")
+        .openPopup();
+    }
     loadStations();
   },
   (error) => {
@@ -201,5 +203,4 @@ document.getElementById("filterStations").addEventListener("click", () => {
   const maxPrice = parseFloat(document.getElementById("price").value);
   showStationsInRange(radius, maxPrice);
 });
-
 
