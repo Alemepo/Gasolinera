@@ -8,8 +8,8 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let userLocation = null;
-let userMarker = null; // Para mantener visible el marcador del usuario
-let stations = [];
+let userMarker = null; // Marcador persistente del usuario
+let stations = []; // Lista global de estaciones
 
 // Obtener la ubicación del usuario
 navigator.geolocation.getCurrentPosition(
@@ -17,18 +17,18 @@ navigator.geolocation.getCurrentPosition(
     userLocation = [position.coords.latitude, position.coords.longitude];
     map.setView(userLocation, 14);
 
-    // Añadir marcador persistente para la ubicación del usuario
+    // Agregar marcador persistente para la ubicación del usuario
     userMarker = L.marker(userLocation, { title: "Tu ubicación" })
       .addTo(map)
       .bindPopup("<strong>Tu ubicación</strong>")
       .openPopup();
 
-    loadStations();
+    loadStations(); // Cargar estaciones después de obtener la ubicación
   },
   (error) => {
     console.error("Error al obtener la ubicación del usuario:", error.message);
     alert("No se pudo obtener tu ubicación. Se mostrará el mapa centrado en Madrid.");
-    loadStations();
+    loadStations(); // Cargar estaciones aunque no se obtenga la ubicación
   }
 );
 
@@ -40,21 +40,21 @@ async function loadStations() {
     const data = await response.json();
     stations = data.ListaEESSPrecio;
     console.log(`Estaciones cargadas: ${stations.length}`);
-    showStationsInRange(5, 1.50); // Mostrar un rango inicial por defecto
+    showStationsInRange(5, 1.50); // Mostrar rango inicial por defecto
   } catch (error) {
     console.error("Error al cargar las estaciones:", error.message);
     alert("No se pudieron cargar las estaciones de servicio. Intenta nuevamente más tarde.");
   }
 }
 
-// Mostrar estaciones en el rango especificado
+// Mostrar estaciones dentro del rango especificado
 function showStationsInRange(radius, maxPrice) {
   if (!userLocation) {
     alert("Ubicación del usuario no disponible.");
     return;
   }
 
-  // Limpia marcadores, excepto el marcador de usuario
+  // Limpia marcadores, excepto el marcador del usuario
   map.eachLayer((layer) => {
     if (layer instanceof L.Marker && layer !== userMarker) map.removeLayer(layer);
   });
@@ -67,7 +67,14 @@ function showStationsInRange(radius, maxPrice) {
       const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
       const distance = haversineDistance(userLat, userLon, lat, lon);
       const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
-      return distance <= radius && price95 <= maxPrice;
+
+      // Validar valores válidos antes de filtrar
+      if (!isNaN(lat) && !isNaN(lon) && !isNaN(price95)) {
+        return distance <= radius && price95 <= maxPrice;
+      } else {
+        console.warn(`Gasolinera inválida ignorada: ${station["Rótulo"]}`);
+        return false;
+      }
     } catch (error) {
       console.error("Error procesando una estación:", error.message);
       return false;
@@ -96,7 +103,7 @@ function showStationsInRange(radius, maxPrice) {
 // Actualizar la lista de estaciones
 function updateStationList(stations) {
   const stationListDiv = document.getElementById("station-list");
-  stationListDiv.innerHTML = ""; // Limpia la lista antes de llenarla
+  stationListDiv.innerHTML = ""; // Limpiar lista
 
   stations.forEach((station) => {
     const lat = parseFloat(station["Latitud"].replace(",", "."));
@@ -190,6 +197,7 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
+
 
 
 
