@@ -67,12 +67,20 @@ function showStationsInRange(radius, maxPrice) {
 
   const [userLat, userLon] = userLocation;
   const filteredStations = stations.filter((station) => {
-    const lat = parseFloat(station["Latitud"].replace(",", "."));
-    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
-    const distance = haversineDistance(userLat, userLon, lat, lon);
-    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
-    return distance <= radius && price <= maxPrice;
+    try {
+      const lat = parseFloat(station["Latitud"].replace(",", "."));
+      const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
+      const distance = haversineDistance(userLat, userLon, lat, lon);
+      const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+      return distance <= radius && price <= maxPrice;
+    } catch (error) {
+      console.error("Error procesando una estación:", error.message);
+      return false;
+    }
   });
+
+  console.log(`Estaciones filtradas: ${filteredStations.length}`);
+  updateStationList(filteredStations);
 
   filteredStations.forEach((station) => {
     const lat = parseFloat(station["Latitud"].replace(",", "."));
@@ -88,8 +96,6 @@ function showStationsInRange(radius, maxPrice) {
       <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `);
   });
-
-  updateStationList(filteredStations);
 }
 
 function updateStationList(stations) {
