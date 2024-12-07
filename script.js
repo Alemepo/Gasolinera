@@ -2,14 +2,15 @@ const API_URL =
   "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/";
 const BACKEND_URL = "https://rutas-d6ev.onrender.com"; // URL de tu backend
 
-const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro en Madrid inicialmente
+// Configuración inicial del mapa
+const map = L.map("map").setView([40.4168, -3.7038], 12); // Centro inicial en Madrid
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "© OpenStreetMap contributors",
 }).addTo(map);
 
 let userLocation = null;
-let userMarker = null; // Marcador persistente del usuario
-let stations = []; // Lista global de estaciones
+let userMarker = null; // Para el marcador de la ubicación del usuario
+let stations = [];
 
 // Obtener la ubicación del usuario
 navigator.geolocation.getCurrentPosition(
@@ -17,18 +18,19 @@ navigator.geolocation.getCurrentPosition(
     userLocation = [position.coords.latitude, position.coords.longitude];
     map.setView(userLocation, 14);
 
-    // Agregar marcador persistente para la ubicación del usuario
+    // Crear marcador persistente para la ubicación del usuario
     userMarker = L.marker(userLocation, { title: "Tu ubicación" })
       .addTo(map)
       .bindPopup("<strong>Tu ubicación</strong>")
       .openPopup();
 
-    loadStations(); // Cargar estaciones después de obtener la ubicación
+    // Cargar estaciones una vez que tengamos la ubicación
+    loadStations();
   },
   (error) => {
     console.error("Error al obtener la ubicación del usuario:", error.message);
     alert("No se pudo obtener tu ubicación. Se mostrará el mapa centrado en Madrid.");
-    loadStations(); // Cargar estaciones aunque no se obtenga la ubicación
+    loadStations(); // Cargar estaciones incluso si no se obtiene la ubicación
   }
 );
 
@@ -40,7 +42,7 @@ async function loadStations() {
     const data = await response.json();
     stations = data.ListaEESSPrecio;
     console.log(`Estaciones cargadas: ${stations.length}`);
-    showStationsInRange(5, 1.50); // Mostrar rango inicial por defecto
+    showStationsInRange(5, 1.50); // Mostrar estaciones por defecto
   } catch (error) {
     console.error("Error al cargar las estaciones:", error.message);
     alert("No se pudieron cargar las estaciones de servicio. Intenta nuevamente más tarde.");
@@ -54,7 +56,7 @@ function showStationsInRange(radius, maxPrice) {
     return;
   }
 
-  // Limpia marcadores, excepto el marcador del usuario
+  // Limpiar todos los marcadores, excepto el del usuario
   map.eachLayer((layer) => {
     if (layer instanceof L.Marker && layer !== userMarker) map.removeLayer(layer);
   });
@@ -67,16 +69,9 @@ function showStationsInRange(radius, maxPrice) {
       const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
       const distance = haversineDistance(userLat, userLon, lat, lon);
       const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
-
-      // Validar valores válidos antes de filtrar
-      if (!isNaN(lat) && !isNaN(lon) && !isNaN(price95)) {
-        return distance <= radius && price95 <= maxPrice;
-      } else {
-        console.warn(`Gasolinera inválida ignorada: ${station["Rótulo"]}`);
-        return false;
-      }
+      return distance <= radius && price95 <= maxPrice;
     } catch (error) {
-      console.error("Error procesando una estación:", error.message);
+      console.warn("Error procesando una estación:", error.message);
       return false;
     }
   });
@@ -100,10 +95,10 @@ function showStationsInRange(radius, maxPrice) {
   });
 }
 
-// Actualizar la lista de estaciones
+// Actualizar la lista de estaciones en la parte inferior
 function updateStationList(stations) {
   const stationListDiv = document.getElementById("station-list");
-  stationListDiv.innerHTML = ""; // Limpiar lista
+  stationListDiv.innerHTML = ""; // Limpiar la lista
 
   stations.forEach((station) => {
     const lat = parseFloat(station["Latitud"].replace(",", "."));
@@ -198,7 +193,9 @@ function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
 
-
-
-
-
+// Filtrar gasolineras al hacer clic en el botón
+document.getElementById("filterStations").addEventListener("click", () => {
+  const radius = parseFloat(document.getElementById("distance").value);
+  const maxPrice = parseFloat(document.getElementById("price").value);
+  showStationsInRange(radius, maxPrice);
+});
