@@ -76,6 +76,7 @@ function showStationsInRange(radius, maxPrice) {
       <strong>${name}</strong><br>
       Dirección: ${address}<br>
       Precio: ${price.toFixed(2)} €<br>
+      <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `);
   });
 
@@ -89,12 +90,50 @@ function updateStationList(stations) {
   stations.forEach((station) => {
     const card = document.createElement("div");
     card.classList.add("station-card");
+
+    const lat = parseFloat(station["Latitud"].replace(",", "."));
+    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
+    const name = station["Rótulo"];
+    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+
     card.innerHTML = `
-      <h3>${station["Rótulo"]}</h3>
-      <p>Precio: ${parseFloat(station["Precio Gasolina 95 E5"]).toFixed(2)} €</p>
+      <h3>${name}</h3>
+      <p>Precio: ${price.toFixed(2)} €</p>
+      <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `;
     listDiv.appendChild(card);
   });
+}
+
+async function showRouteToStation(lat, lon) {
+  if (!userLocation) {
+    alert("No se pudo obtener la ubicación del usuario.");
+    return;
+  }
+
+  const [userLat, userLon] = userLocation;
+  const routeUrl = `${ROUTE_API_URL}?api_key=${API_KEY}&start=${userLon},${userLat}&end=${lon},${lat}`;
+
+  try {
+    const response = await fetch(routeUrl);
+    const data = await response.json();
+
+    if (data.routes && data.routes[0]) {
+      const route = data.routes[0].segments[0];
+      const steps = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+
+      L.polyline(steps, { color: 'blue', weight: 5, opacity: 0.7 }).addTo(map);
+
+      const distance = route.distance / 1000;
+      const duration = route.duration / 60;
+      alert(`Distancia: ${distance.toFixed(2)} km\nTiempo estimado: ${duration.toFixed(0)} minutos`);
+    } else {
+      alert("No se pudo calcular la ruta.");
+    }
+  } catch (error) {
+    console.error("Error al obtener la ruta:", error);
+    alert("Hubo un problema al calcular la ruta.");
+  }
 }
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
