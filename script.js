@@ -71,7 +71,14 @@ function showStationsInRange(radius, maxPrice) {
       const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
       const distance = haversineDistance(userLat, userLon, lat, lon);
 
-      // Validar coordenadas y precios
+      // Mostrar depuración de cada gasolinera
+      console.log(
+        `Procesando estación: ${station["Rótulo"]} | Distancia: ${distance.toFixed(
+          2
+        )} km | Precio: ${price95} €`
+      );
+
+      // Validar coordenadas, precios y distancia
       if (isNaN(lat) || isNaN(lon) || isNaN(price95)) {
         console.warn(`Estación inválida ignorada: ${station["Rótulo"]}`);
         return false;
@@ -123,67 +130,6 @@ function updateStationList(stations) {
     `;
     stationListDiv.appendChild(card);
   });
-}
-
-// Mostrar la ruta hacia una estación seleccionada
-async function showRouteToStation(lat, lon) {
-  if (!userLocation) {
-    alert("No se pudo obtener la ubicación del usuario.");
-    return;
-  }
-
-  const [userLat, userLon] = userLocation;
-
-  const routeUrl = `${BACKEND_URL}/directions?origin=${userLat},${userLon}&destination=${lat},${lon}`;
-
-  try {
-    const response = await fetch(routeUrl);
-    if (!response.ok) throw new Error("Error al obtener la ruta del backend.");
-    const data = await response.json();
-
-    const points = data.routes[0].overview_polyline.points;
-    const polyline = L.polyline(decodePolyline(points), { color: "blue", weight: 5 }).addTo(map);
-
-    const distance = data.routes[0].legs[0].distance.text;
-    const duration = data.routes[0].legs[0].duration.text;
-    alert(`Distancia: ${distance}\nDuración: ${duration}`);
-  } catch (error) {
-    console.error("Error al obtener la ruta:", error.message);
-    alert("Hubo un problema al calcular la ruta.");
-  }
-}
-
-// Decodificar polyline
-function decodePolyline(encoded) {
-  let points = [];
-  let index = 0,
-    lat = 0,
-    lng = 0;
-
-  while (index < encoded.length) {
-    let b, shift = 0, result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lat += dlat;
-
-    shift = 0;
-    result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lng += dlng;
-
-    points.push([lat / 1e5, lng / 1e5]);
-  }
-
-  return points;
 }
 
 // Calcular distancia entre dos puntos
