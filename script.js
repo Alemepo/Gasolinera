@@ -16,6 +16,7 @@ let stations = []; // Lista global de estaciones
 navigator.geolocation.getCurrentPosition(
   (position) => {
     userLocation = [position.coords.latitude, position.coords.longitude];
+    console.log("Ubicación del usuario:", userLocation); // Log de depuración
     map.setView(userLocation, 14);
 
     // Crear marcador persistente para la ubicación del usuario
@@ -73,7 +74,7 @@ function showStationsInRange(radius, maxPrice) {
 
       // Mostrar depuración de cada gasolinera
       console.log(
-        `Procesando estación: ${station["Rótulo"]} | Distancia: ${distance.toFixed(
+        `Procesando estación: ${station["Rótulo"]} | Coordenadas: (${lat}, ${lon}) | Distancia: ${distance.toFixed(
           2
         )} km | Precio: ${price95} €`
       );
@@ -107,28 +108,6 @@ function showStationsInRange(radius, maxPrice) {
       Precio Gasolina 95: <strong>${price.toFixed(2)} €</strong><br>
       <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `);
-  });
-}
-
-// Actualizar la lista de estaciones en la parte inferior
-function updateStationList(stations) {
-  const stationListDiv = document.getElementById("station-list");
-  stationListDiv.innerHTML = ""; // Limpiar la lista
-
-  stations.forEach((station) => {
-    const lat = parseFloat(station["Latitud"].replace(",", "."));
-    const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
-    const name = station["Rótulo"];
-    const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
-
-    const card = document.createElement("div");
-    card.classList.add("station-card");
-    card.innerHTML = `
-      <h3>${name}</h3>
-      <p>Precio Gasolina 95: ${price95.toFixed(2)} €</p>
-      <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
-    `;
-    stationListDiv.appendChild(card);
   });
 }
 
