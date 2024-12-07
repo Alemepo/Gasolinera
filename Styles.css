@@ -93,3 +93,19 @@ button:hover {
   font-size: 14px;
 }
 
+.station-card button {
+  padding: 5px 10px;
+  margin-top: 5px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.station-card button:hover {
+  background-color: #218838;
+}
+
+
