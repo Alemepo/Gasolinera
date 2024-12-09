@@ -18,10 +18,10 @@ body {
 /* Título principal */
 h1 {
   text-align: center;
-  margin: 10px 0;
-  font-size: 28px;
+  margin: 20px 0; /* Mayor separación del contenido */
+  font-size: 32px;
   color: #00aaff; /* Azul vibrante */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Controles */
@@ -30,12 +30,12 @@ h1 {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 15px;
-  padding: 15px;
+  gap: 20px; /* Mayor separación entre controles */
+  padding: 20px;
   background-color: #444; /* Fondo oscuro */
-  border-radius: 8px; /* Bordes redondeados */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra */
-  margin-bottom: 20px; /* Separación del mapa */
+  border-radius: 12px; /* Bordes redondeados */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra */
+  margin-bottom: 30px; /* Separación del mapa */
 }
 
 .controls label {
@@ -45,28 +45,28 @@ h1 {
 
 .controls input,
 .controls select {
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #555; /* Bordes claros */
-  border-radius: 5px;
-  font-size: 14px;
+  border-radius: 8px; /* Más redondeado */
+  font-size: 16px; /* Tamaño de fuente mayor */
   background-color: #333; /* Fondo oscuro */
   color: #fff; /* Texto claro */
 }
 
 button {
-  padding: 8px 16px;
+  padding: 10px 20px;
   background-color: #007BFF;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px; /* Tamaño de fuente mayor */
   transition: background-color 0.3s, transform 0.2s;
 }
 
 button:hover {
   background-color: #0056b3;
-  transform: scale(1.05);
+  transform: scale(1.08); /* Efecto más pronunciado */
 }
 
 .hidden {
@@ -83,8 +83,8 @@ button:hover {
   flex-grow: 1;
   width: 100%;
   border: 3px solid #555; /* Borde más claro */
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra */
+  border-radius: 12px; /* Bordes más redondeados */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra */
   margin-bottom: 20px; /* Espaciado del mapa */
 }
 
@@ -95,8 +95,8 @@ button:hover {
   padding: 15px;
   background-color: #2c2c2c; /* Fondo oscuro */
   border-top: 2px solid #555; /* Borde claro */
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7); /* Sombra interna */
-  border-radius: 8px; /* Bordes redondeados */
+  box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.7); /* Sombra interna */
+  border-radius: 12px; /* Bordes redondeados */
 }
 
 /* Tarjetas de gasolineras */
@@ -104,33 +104,35 @@ button:hover {
   background-color: #222; /* Fondo oscuro */
   color: #ddd; /* Texto claro */
   border: 1px solid #444; /* Borde tenue */
-  border-radius: 8px; /* Bordes redondeados */
-  padding: 15px;
-  margin-bottom: 15px; /* Separación entre tarjetas */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra */
-  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px; /* Bordes más redondeados */
+  padding: 20px;
+  margin-bottom: 20px; /* Separación entre tarjetas */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Sombra */
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .station-card:hover {
-  transform: translateY(-3px); /* Efecto de elevación */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Sombra al pasar el mouse */
+  transform: translateY(-5px); /* Efecto de elevación */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4); /* Sombra al pasar el mouse */
 }
 
 .station-card h3 {
   color: #00aaff; /* Azul vibrante */
+  font-size: 20px;
 }
 
 .station-card p {
-  margin: 5px 0; /* Espaciado más compacto */
+  margin: 8px 0; /* Espaciado más compacto */
+  font-size: 14px;
 }
 
 .station-card button {
-  padding: 6px 12px;
-  margin-top: 8px;
+  padding: 8px 16px;
+  margin-top: 10px;
   background-color: #28a745; /* Verde */
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
@@ -158,6 +160,10 @@ button:hover {
   #station-list {
     height: 60%; /* Más espacio para la lista */
   }
-}
 
+  .controls {
+    flex-direction: column; /* Controles en columna */
+    gap: 10px;
+  }
+}
 
