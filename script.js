@@ -10,7 +10,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let userLocation = null;
 let stations = [];
 let currentRoute = null; // Variable para almacenar la ruta actual
-let favorites = JSON.parse(localStorage.getItem("favorites")) || []; // Cargar favoritos de localStorage
 
 // Cargar estaciones desde la API
 async function loadStations() {
@@ -18,15 +17,38 @@ async function loadStations() {
     const response = await fetch(API_URL);
     const data = await response.json();
     stations = data.ListaEESSPrecio;
-    showStationsInRange(5, 1.50, "Precio Gasolina 95 E5");
+    showStationsInRange(5, 1.50);
   } catch (error) {
     console.error("Error al cargar las estaciones:", error.message);
     alert("No se pudieron cargar las estaciones de servicio.");
   }
 }
 
+// Ordenar estaciones
+function sortStations(stations, sortBy, userLat, userLon) {
+  return stations.sort((a, b) => {
+    const latA = parseFloat(a["Latitud"].replace(",", "."));
+    const lonA = parseFloat(a["Longitud (WGS84)"].replace(",", "."));
+    const latB = parseFloat(b["Latitud"].replace(",", "."));
+    const lonB = parseFloat(b["Longitud (WGS84)"].replace(",", "."));
+
+    const distanceA = haversineDistance(userLat, userLon, latA, lonA);
+    const distanceB = haversineDistance(userLat, userLon, latB, lonB);
+
+    const priceA = parseFloat(a["Precio Gasolina 95 E5"].replace(",", "."));
+    const priceB = parseFloat(b["Precio Gasolina 95 E5"].replace(",", "."));
+
+    if (sortBy === "nearest-cheapest") {
+      if (distanceA === distanceB) return priceA - priceB;
+      return distanceA - distanceB;
+    } else if (sortBy === "cheapest") {
+      return priceA - priceB;
+    }
+  });
+}
+
 // Mostrar estaciones dentro del rango
-function showStationsInRange(radius, maxPrice, fuelType) {
+function showStationsInRange(radius, maxPrice) {
   if (!userLocation) {
     alert("Ubicación del usuario no disponible.");
     return;
@@ -43,31 +65,36 @@ function showStationsInRange(radius, maxPrice, fuelType) {
       const lat = parseFloat(station["Latitud"].replace(",", "."));
       const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
       const distance = haversineDistance(userLat, userLon, lat, lon);
-      const price = parseFloat(station[fuelType]?.replace(",", "."));
-      return distance <= radius && price <= maxPrice && !isNaN(price);
+      const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
+      return distance <= radius && price95 <= maxPrice;
     } catch {
       return false;
     }
   });
 
-  updateStationList(filteredStations, fuelType);
+  const sortCriteria = document.getElementById("sortCriteria").value;
+  const sortedStations = sortStations(filteredStations, sortCriteria, userLat, userLon);
 
-  filteredStations.forEach((station) => {
+  updateStationList(sortedStations);
+
+  sortedStations.forEach((station) => {
     const lat = parseFloat(station["Latitud"].replace(",", "."));
     const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
     const name = station["Rótulo"];
     const address = station["Dirección"];
+    const price = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
 
     L.marker([lat, lon]).addTo(map).bindPopup(`
       <strong>${name}</strong><br>
       Dirección: ${address}<br>
+      Precio Gasolina 95: <strong>${price.toFixed(2)} €</strong><br>
       <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
     `);
   });
 }
 
 // Actualizar lista de estaciones
-function updateStationList(stations, fuelType) {
+function updateStationList(stations) {
   const stationListDiv = document.getElementById("station-list");
   stationListDiv.innerHTML = "";
 
@@ -77,59 +104,30 @@ function updateStationList(stations, fuelType) {
     const name = station["Rótulo"];
     const address = station["Dirección"];
     const municipality = station["Municipio"];
-    const price = parseFloat(station[fuelType]?.replace(",", "."));
+    const province = station["Provincia"];
+    const schedule = station["Horario"];
+    const price95 = parseFloat(station["Precio Gasolina 95 E5"].replace(",", "."));
     const distance = haversineDistance(userLocation[0], userLocation[1], lat, lon);
-    const isFavorite = favorites.some((fav) => fav.name === name && fav.address === address);
 
     const card = document.createElement("div");
     card.classList.add("station-card");
     card.innerHTML = `
       <h3>${name}</h3>
-      <p><strong>Dirección:</strong> ${address}, ${municipality}</p>
+      <p><strong>Dirección:</strong> ${address}, ${municipality}, ${province}</p>
+      <p><strong>Horario:</strong> ${schedule}</p>
       <p><strong>Distancia:</strong> ${distance.toFixed(2)} km</p>
-      <p><strong>Precio:</strong> ${price.toFixed(2)} €</p>
+      <p><strong>Precio Gasolina 95:</strong> ${price95.toFixed(2)} €</p>
       <button onclick="showRouteToStation(${lat}, ${lon})">Ver Ruta</button>
-      <button onclick="toggleFavorite('${name}', '${address}', ${lat}, ${lon})">
-        ${isFavorite ? "Quitar de Favoritos" : "Agregar a Favoritos"}
-      </button>
     `;
     stationListDiv.appendChild(card);
   });
-}
-
-// Alternar favoritos
-function toggleFavorite(name, address, lat, lon) {
-  const favoriteIndex = favorites.findIndex((fav) => fav.name === name && fav.address === address);
-
-  if (favoriteIndex >= 0) {
-    favorites.splice(favoriteIndex, 1); // Eliminar de favoritos
-  } else {
-    favorites.push({ name, address, lat, lon }); // Agregar a favoritos
-  }
-
-  localStorage.setItem("favorites", JSON.stringify(favorites)); // Guardar en localStorage
-  const radius = parseFloat(document.getElementById("distance").value);
-  const maxPrice = parseFloat(document.getElementById("price").value);
-  const fuelType = document.getElementById("fuelType").value;
-  showStationsInRange(radius, maxPrice, fuelType); // Actualizar la lista
-}
-
-// Mostrar favoritos
-function showFavorites() {
-  updateStationList(favorites.map((fav) => ({
-    "Rótulo": fav.name,
-    "Dirección": fav.address,
-    "Latitud": fav.lat.toString(),
-    "Longitud (WGS84)": fav.lon.toString(),
-    "Municipio": "",
-  })), "Precio Gasolina 95 E5");
 }
 
 // Calcular distancia
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -149,27 +147,69 @@ async function showRouteToStation(lat, lon) {
 
   const [userLat, userLon] = userLocation;
 
-  if (currentRoute) {
-    map.removeLayer(currentRoute); // Limpiar ruta anterior
+  const routeUrl = `${BACKEND_URL}/directions?origin=${userLat},${userLon}&destination=${lat},${lon}`;
+
+  try {
+    const response = await fetch(routeUrl);
+    if (!response.ok) throw new Error("Error al obtener la ruta del backend.");
+    const data = await response.json();
+
+    // Decodificar polyline de la ruta
+    const points = data.routes[0].overview_polyline.points;
+    const polylinePoints = decodePolyline(points);
+
+    // Eliminar la ruta anterior si existe
+    if (currentRoute) {
+      map.removeLayer(currentRoute);
+    }
+
+    // Dibujar la nueva ruta
+    currentRoute = L.polyline(polylinePoints, { color: "blue", weight: 5 }).addTo(map);
+
+    // Ajustar la vista al área de la ruta
+    map.fitBounds(currentRoute.getBounds());
+
+    // Mostrar distancia y duración
+    const distance = data.routes[0].legs[0].distance.text;
+    const duration = data.routes[0].legs[0].duration.text;
+    alert(`Distancia: ${distance}\nDuración: ${duration}`);
+  } catch (error) {
+    console.error("Error al obtener la ruta:", error.message);
+    alert("Hubo un problema al calcular la ruta.");
+  }
+}
+
+// Decodificar polyline
+function decodePolyline(encoded) {
+  let points = [];
+  let index = 0,
+    lat = 0,
+    lng = 0;
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
+
+    points.push([lat / 1e5, lng / 1e5]);
   }
 
-  currentRoute = L.polyline([[userLat, userLon], [lat, lon]], {
-    color: "blue",
-    weight: 5,
-  }).addTo(map);
-  map.fitBounds(currentRoute.getBounds());
-}
-
-// Alternar modo claro/oscuro
-function toggleTheme() {
-  const body = document.body;
-  const isDark = body.classList.toggle("dark-mode");
-  localStorage.setItem("theme", isDark ? "dark" : "light");
-}
-
-// Aplicar tema desde localStorage
-if (localStorage.getItem("theme") === "dark") {
-  document.body.classList.add("dark-mode");
+  return points;
 }
 
 // Obtener ubicación del usuario
@@ -186,15 +226,15 @@ navigator.geolocation.getCurrentPosition(
   }
 );
 
-// Manejar eventos
 document.getElementById("filterStations").addEventListener("click", () => {
   const radius = parseFloat(document.getElementById("distance").value);
   const maxPrice = parseFloat(document.getElementById("price").value);
-  const fuelType = document.getElementById("fuelType").value;
-  showStationsInRange(radius, maxPrice, fuelType);
+  showStationsInRange(radius, maxPrice);
 });
 
-document.getElementById("showFavorites").addEventListener("click", showFavorites);
-document.getElementById("toggleTheme").addEventListener("click", toggleTheme);
-
+document.getElementById("sortCriteria").addEventListener("change", () => {
+  const radius = parseFloat(document.getElementById("distance").value);
+  const maxPrice = parseFloat(document.getElementById("price").value);
+  showStationsInRange(radius, maxPrice);
+});
 
