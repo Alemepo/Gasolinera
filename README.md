@@ -1,3 +1,8 @@
+Lo primero aclarar que cuando le das al boton " ver ruta " tardará unos minutos con la primera solicitud, una vez cargada el resto de solicitudes irán como un tiro.
+Me gustaría añadir nuevas cosas y funcionalidades, quizas cuando leas esto no esten todavía, pero lo que entrego ahora mismo lo veo basntante completo, sobretodo el como he conseguido saltarme el filtro del cors. ( explicado abajo ).
+
+
+
 1. Archivo Styles.css (Estilos CSS)
 
 controls: Define el diseño de los controles (inputs, botones, y etiquetas) en la parte superior de la página. Se utilizan para que el usuario filtre las estaciones de gasolineras según la distancia y el precio.
