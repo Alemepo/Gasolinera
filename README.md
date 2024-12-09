@@ -4,6 +4,7 @@ Me gustaría añadir nuevas cosas y funcionalidades, quizas cuando leas esto no 
 A continuacion mi proyecto. en el proyecto te pedirá tu ubicacion actual y mediante los filtros podremos añadir a los km que queremos que nos marque las gasolineras que tenemos a esa distancia de nuestra posicion. tambien podemos pedir que nos ordene por gasolinera mas barata y por gasolinera mas barata/distancia.
 Despues podemos darle a ver ruta y nos dirá la distancia que hay en coche desde nuestra ubicación ( la primera vez que le demos a ver ruta tardará unos minutos en cargar ).
 Si le damos a ver ruta de una nueva gasolinera, se borrará la anterior petición y se sutituirá la línea que marca la ruta.
+Si acercamos el raton donde los cuadros donde sale la informacion completa de cada gasolinera, el cuadro hace un pelin de zoom para que sea mas agradable y si lo pones encima de " ver ruta " hace mas zoom
 
 
 
