@@ -9,6 +9,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 let userLocation = null;
 let stations = [];
+let currentRoute = null; // Variable para almacenar la ruta actual
 
 // Cargar estaciones desde la API
 async function loadStations() {
@@ -139,8 +140,76 @@ function toRad(deg) {
 
 // Mostrar ruta
 async function showRouteToStation(lat, lon) {
-  if (!userLocation) return;
-  alert("Aquí mostraríamos la ruta a la gasolinera seleccionada.");
+  if (!userLocation) {
+    alert("No se pudo obtener la ubicación del usuario.");
+    return;
+  }
+
+  const [userLat, userLon] = userLocation;
+
+  const routeUrl = `${BACKEND_URL}/directions?origin=${userLat},${userLon}&destination=${lat},${lon}`;
+
+  try {
+    const response = await fetch(routeUrl);
+    if (!response.ok) throw new Error("Error al obtener la ruta del backend.");
+    const data = await response.json();
+
+    // Decodificar polyline de la ruta
+    const points = data.routes[0].overview_polyline.points;
+    const polylinePoints = decodePolyline(points);
+
+    // Eliminar la ruta anterior si existe
+    if (currentRoute) {
+      map.removeLayer(currentRoute);
+    }
+
+    // Dibujar la nueva ruta
+    currentRoute = L.polyline(polylinePoints, { color: "blue", weight: 5 }).addTo(map);
+
+    // Ajustar la vista al área de la ruta
+    map.fitBounds(currentRoute.getBounds());
+
+    // Mostrar distancia y duración
+    const distance = data.routes[0].legs[0].distance.text;
+    const duration = data.routes[0].legs[0].duration.text;
+    alert(`Distancia: ${distance}\nDuración: ${duration}`);
+  } catch (error) {
+    console.error("Error al obtener la ruta:", error.message);
+    alert("Hubo un problema al calcular la ruta.");
+  }
+}
+
+// Decodificar polyline
+function decodePolyline(encoded) {
+  let points = [];
+  let index = 0,
+    lat = 0,
+    lng = 0;
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
+
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+
+  return points;
 }
 
 // Obtener ubicación del usuario
