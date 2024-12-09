@@ -9,7 +9,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 let userLocation = null;
 let stations = [];
-let currentRoute = null; // Variable para la ruta actual
+let currentRoute = null; // Variable para almacenar la ruta actual
 let favorites = JSON.parse(localStorage.getItem("favorites")) || []; // Cargar favoritos de localStorage
 
 // Cargar estaciones desde la API
@@ -129,7 +129,7 @@ function showFavorites() {
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+  const dLon = toRad(lat2 - lat1);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -147,13 +147,16 @@ async function showRouteToStation(lat, lon) {
     return;
   }
 
+  const [userLat, userLon] = userLocation;
+
   if (currentRoute) {
-    map.removeLayer(currentRoute);
+    map.removeLayer(currentRoute); // Limpiar ruta anterior
   }
 
-  const [userLat, userLon] = userLocation;
-  const points = [[userLat, userLon], [lat, lon]];
-  currentRoute = L.polyline(points, { color: "blue", weight: 5 }).addTo(map);
+  currentRoute = L.polyline([[userLat, userLon], [lat, lon]], {
+    color: "blue",
+    weight: 5,
+  }).addTo(map);
   map.fitBounds(currentRoute.getBounds());
 }
 
@@ -193,6 +196,5 @@ document.getElementById("filterStations").addEventListener("click", () => {
 
 document.getElementById("showFavorites").addEventListener("click", showFavorites);
 document.getElementById("toggleTheme").addEventListener("click", toggleTheme);
-
 
 
