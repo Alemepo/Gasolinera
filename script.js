@@ -26,7 +26,7 @@ async function loadStations() {
     const response = await fetch(API_URL);
     const data = await response.json();
     stations = data.ListaEESSPrecio;
-    showStationsInRange(5, 1.50);
+    showStationsInRange(5, 1.50); // Mostramos estaciones dentro de un rango predeterminado
   } catch (error) {
     console.error("Error al cargar las estaciones:", error.message);
     alert("No se pudieron cargar las estaciones de servicio.");
@@ -63,15 +63,9 @@ function showStationsInRange(radius, maxPrice) {
     return;
   }
 
-  // Eliminar todos los marcadores de gasolineras pero mantener el marcador del usuario
-  map.eachLayer((layer) => {
-    if (layer instanceof L.Marker && layer !== userLocationMarker) {
-      map.removeLayer(layer);
-    }
-  });
-
   const [userLat, userLon] = userLocation;
 
+  // Filtramos las estaciones por rango de distancia y precio
   const filteredStations = stations.filter((station) => {
     try {
       const lat = parseFloat(station["Latitud"].replace(",", "."));
@@ -89,6 +83,14 @@ function showStationsInRange(radius, maxPrice) {
 
   updateStationList(sortedStations);
 
+  // Limpiamos los marcadores de estaciones anteriores pero mantenemos el marcador del usuario
+  map.eachLayer((layer) => {
+    if (layer instanceof L.Marker && layer !== userLocationMarker) {
+      map.removeLayer(layer);
+    }
+  });
+
+  // Añadimos los nuevos marcadores de estaciones
   sortedStations.forEach((station) => {
     const lat = parseFloat(station["Latitud"].replace(",", "."));
     const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
@@ -139,7 +141,7 @@ function updateStationList(stations) {
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lat2 - lon2);
+  const dLon = toRad(lon2 - lon1);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -148,39 +150,6 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 
 function toRad(deg) {
   return (deg * Math.PI) / 180;
-}
-
-// Decodificar polyline
-function decodePolyline(encoded) {
-  let points = [];
-  let index = 0,
-    lat = 0,
-    lng = 0;
-
-  while (index < encoded.length) {
-    let b, shift = 0, result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lat += dlat;
-
-    shift = 0;
-    result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lng += dlng;
-
-    points.push([lat / 1e5, lng / 1e5]);
-  }
-
-  return points;
 }
 
 // Mostrar ruta
@@ -218,6 +187,39 @@ async function showRouteToStation(lat, lon) {
   }
 }
 
+// Decodificar polyline
+function decodePolyline(encoded) {
+  let points = [];
+  let index = 0,
+    lat = 0,
+    lng = 0;
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
+
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+
+  return points;
+}
+
 // Obtener ubicación del usuario
 navigator.geolocation.getCurrentPosition(
   (position) => {
@@ -251,5 +253,6 @@ document.getElementById("sortCriteria").addEventListener("change", () => {
   const maxPrice = parseFloat(document.getElementById("price").value);
   showStationsInRange(radius, maxPrice);
 });
+
 
 
