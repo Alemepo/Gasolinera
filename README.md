@@ -1,6 +1,10 @@
 Lo primero aclarar que cuando le das al boton " ver ruta " tardará unos minutos con la primera solicitud, una vez cargada el resto de solicitudes irán como un tiro.
 Me gustaría añadir nuevas cosas y funcionalidades, quizas cuando leas esto no esten todavía, pero lo que entrego ahora mismo lo veo basntante completo, sobretodo el como he conseguido saltarme el filtro del cors. ( explicado abajo ).
 
+A continuacion mi proyecto. en el proyecto te pedirá tu ubicacion actual y mediante los filtros podremos añadir a los km que queremos que nos marque las gasolineras que tenemos a esa distancia de nuestra posicion. tambien podemos pedir que nos ordene por gasolinera mas barata y por gasolinera mas barata/distancia.
+Despues podemos darle a ver ruta y nos dirá la distancia que hay en coche desde nuestra ubicación ( la primera vez que le demos a ver ruta tardará unos minutos en cargar ).
+Si le damos a ver ruta de una nueva gasolinera, se borrará la anterior petición y se sutituirá la línea que marca la ruta.
+
 
 
 1. Archivo Styles.css (Estilos CSS)
@@ -118,4 +122,19 @@ Lo que hace:
 3 Manejo de errores:
 -Verifica que los parámetros origin y destination estén presentes.
 -Maneja errores si la API de Google Directions falla o devuelve un error.
+
+
+Conclusión. 
+tuve varios problemas con el tema de manterner el marcador de mi ubicación cuando se filtraban los de la gasolinera.
+solucióne el problema haciendo que no se borrase al filtrar capas con lo de rastrear los km de gasolineras.
+el mayor problema fue el reto de conseguir filtrar el cors ( explicado más arriba )
+Escogí varias api. la de google maps ( para las rutas )
+la de minetur ( para las gasolineras ) 
+la de Node.js ( para hacer el backend ) 
+
+A pesar de que creó que puedo añadir nuevas funcionalidades como digo al principio ( como añadir a favoritos algunas gasolineras ) y algunas tonterias visuales más. voy algo justo de tiempo con todos los examenes finales
+y el tema de solucionar el cors ya me llevo como 6h solucionar todo eso y enlazarlo al github y que funcionase con la api de google.
+Creo que un 8/9 sería bastante justo solo por el tema de cors, ya que dudo que ningun compañero haya conseguido trazar la ruta sin hacer que se vaya a un navegador externo. Ademas creo que visualmente no es agradable.
+
+
 
