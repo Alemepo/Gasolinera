@@ -12,6 +12,14 @@ let userLocationMarker = null; // Variable para guardar el marcador de la ubicac
 let stations = [];
 let currentRoute = null; // Variable para almacenar la ruta actual
 
+// Crear un ícono personalizado para la ubicación del usuario
+const userIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png", // Ícono personalizado
+  iconSize: [30, 30], // Tamaño del ícono
+  iconAnchor: [15, 30], // Punto del ícono que corresponde a la posición en el mapa
+  popupAnchor: [0, -30], // Posición del popup relativo al ícono
+});
+
 // Cargar estaciones desde la API
 async function loadStations() {
   try {
@@ -131,7 +139,7 @@ function updateStationList(stations) {
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
+  const dLon = toRad(lat2 - lon2);
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
@@ -217,7 +225,7 @@ navigator.geolocation.getCurrentPosition(
     map.setView(userLocation, 14);
 
     if (!userLocationMarker) {
-      userLocationMarker = L.marker(userLocation)
+      userLocationMarker = L.marker(userLocation, { icon: userIcon })
         .addTo(map)
         .bindPopup("Tu ubicación")
         .openPopup();
