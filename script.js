@@ -29,6 +29,33 @@ async function loadStations() {
   }
 }
 
+// Función para ordenar estaciones por distancia y precio
+function sortStations(stations, sortBy, userLat, userLon) {
+  return stations.sort((a, b) => {
+    const latA = parseFloat(a["Latitud"].replace(",", "."));
+    const lonA = parseFloat(a["Longitud (WGS84)"].replace(",", "."));
+    const latB = parseFloat(b["Latitud"].replace(",", "."));
+    const lonB = parseFloat(b["Longitud (WGS84)"].replace(",", "."));
+
+    const distanceA = haversineDistance(userLat, userLon, latA, lonA);
+    const distanceB = haversineDistance(userLat, userLon, latB, lonB);
+
+    const priceA = parseFloat(a["Precio Gasolina 95 E5"].replace(",", "."));
+    const priceB = parseFloat(b["Precio Gasolina 95 E5"].replace(",", "."));
+
+    if (sortBy === "nearest-cheapest") {
+      // Ordenar por cercanía y, en caso de empate, por precio
+      if (distanceA === distanceB) {
+        return priceA - priceB;
+      }
+      return distanceA - distanceB;
+    } else if (sortBy === "cheapest") {
+      // Ordenar solo por precio
+      return priceA - priceB;
+    }
+  });
+}
+
 // Función para mostrar estaciones dentro del rango especificado
 function showStationsInRange(radius, maxPrice) {
   if (!userLocation) {
@@ -56,10 +83,14 @@ function showStationsInRange(radius, maxPrice) {
     }
   });
 
-  console.log(`Estaciones filtradas: ${filteredStations.length}`);
-  updateStationList(filteredStations);
+  // Obtener criterio de ordenación seleccionado
+  const sortCriteria = document.getElementById("sortCriteria").value;
+  const sortedStations = sortStations(filteredStations, sortCriteria, userLat, userLon);
 
-  filteredStations.forEach((station) => {
+  console.log(`Estaciones filtradas y ordenadas: ${sortedStations.length}`);
+  updateStationList(sortedStations);
+
+  sortedStations.forEach((station) => {
     const lat = parseFloat(station["Latitud"].replace(",", "."));
     const lon = parseFloat(station["Longitud (WGS84)"].replace(",", "."));
     const name = station["Rótulo"];
@@ -194,6 +225,13 @@ navigator.geolocation.getCurrentPosition(
 
 // Filtrar gasolineras al hacer clic en el botón
 document.getElementById("filterStations").addEventListener("click", () => {
+  const radius = parseFloat(document.getElementById("distance").value);
+  const maxPrice = parseFloat(document.getElementById("price").value);
+  showStationsInRange(radius, maxPrice);
+});
+
+// Escuchar cambios en el selector de ordenación
+document.getElementById("sortCriteria").addEventListener("change", () => {
   const radius = parseFloat(document.getElementById("distance").value);
   const maxPrice = parseFloat(document.getElementById("price").value);
   showStationsInRange(radius, maxPrice);
