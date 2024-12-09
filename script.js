@@ -8,6 +8,7 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let userLocation = null;
+let userLocationMarker = null; // Guardaremos aquí el marcador de la ubicación del usuario
 let stations = [];
 let currentRoute = null; // Variable para almacenar la ruta actual
 
@@ -54,8 +55,11 @@ function showStationsInRange(radius, maxPrice) {
     return;
   }
 
+  // Eliminar todos los marcadores de gasolineras (pero no el marcador del usuario)
   map.eachLayer((layer) => {
-    if (layer instanceof L.Marker) map.removeLayer(layer);
+    if (layer instanceof L.Marker && layer !== userLocationMarker) {
+      map.removeLayer(layer);
+    }
   });
 
   const [userLat, userLon] = userLocation;
@@ -138,86 +142,19 @@ function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
 
-// Mostrar ruta
-async function showRouteToStation(lat, lon) {
-  if (!userLocation) {
-    alert("No se pudo obtener la ubicación del usuario.");
-    return;
-  }
-
-  const [userLat, userLon] = userLocation;
-
-  const routeUrl = `${BACKEND_URL}/directions?origin=${userLat},${userLon}&destination=${lat},${lon}`;
-
-  try {
-    const response = await fetch(routeUrl);
-    if (!response.ok) throw new Error("Error al obtener la ruta del backend.");
-    const data = await response.json();
-
-    // Decodificar polyline de la ruta
-    const points = data.routes[0].overview_polyline.points;
-    const polylinePoints = decodePolyline(points);
-
-    // Eliminar la ruta anterior si existe
-    if (currentRoute) {
-      map.removeLayer(currentRoute);
-    }
-
-    // Dibujar la nueva ruta
-    currentRoute = L.polyline(polylinePoints, { color: "blue", weight: 5 }).addTo(map);
-
-    // Ajustar la vista al área de la ruta
-    map.fitBounds(currentRoute.getBounds());
-
-    // Mostrar distancia y duración
-    const distance = data.routes[0].legs[0].distance.text;
-    const duration = data.routes[0].legs[0].duration.text;
-    alert(`Distancia: ${distance}\nDuración: ${duration}`);
-  } catch (error) {
-    console.error("Error al obtener la ruta:", error.message);
-    alert("Hubo un problema al calcular la ruta.");
-  }
-}
-
-// Decodificar polyline
-function decodePolyline(encoded) {
-  let points = [];
-  let index = 0,
-    lat = 0,
-    lng = 0;
-
-  while (index < encoded.length) {
-    let b, shift = 0, result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    let dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lat += dlat;
-
-    shift = 0;
-    result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    let dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
-    lng += dlng;
-
-    points.push([lat / 1e5, lng / 1e5]);
-  }
-
-  return points;
-}
-
 // Obtener ubicación del usuario
 navigator.geolocation.getCurrentPosition(
   (position) => {
     userLocation = [position.coords.latitude, position.coords.longitude];
     map.setView(userLocation, 14);
-    L.marker(userLocation).addTo(map).bindPopup("Tu ubicación").openPopup();
+
+    // Agregar marcador de la ubicación del usuario
+    if (!userLocationMarker) {
+      userLocationMarker = L.marker(userLocation)
+        .addTo(map)
+        .bindPopup("Tu ubicación")
+        .openPopup();
+    }
     loadStations();
   },
   () => {
@@ -226,6 +163,7 @@ navigator.geolocation.getCurrentPosition(
   }
 );
 
+// Evento para el botón de filtrar
 document.getElementById("filterStations").addEventListener("click", () => {
   const radius = parseFloat(document.getElementById("distance").value);
   const maxPrice = parseFloat(document.getElementById("price").value);
@@ -237,4 +175,5 @@ document.getElementById("sortCriteria").addEventListener("change", () => {
   const maxPrice = parseFloat(document.getElementById("price").value);
   showStationsInRange(radius, maxPrice);
 });
+
 
