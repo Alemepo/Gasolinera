@@ -112,4 +112,40 @@ button:hover {
   background-color: #218838;
 }
 
+/* Estilos para pantallas grandes (por defecto) */
+#map {
+  flex-grow: 1;
+  width: 100%;
+  border: 1px solid #ccc;
+}
+
+#station-list {
+  height: 40%;
+  overflow-y: auto;
+  padding: 10px;
+  background-color: #ffffff;
+  border-top: 1px solid #ccc;
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 768px) {
+  #map {
+    height: 50%; /* Ajustar la altura del mapa en móviles */
+  }
+
+  #station-list {
+    height: 50%; /* Ajustar la lista para ocupar el resto del espacio */
+  }
+}
+
+@media (max-width: 480px) {
+  #map {
+    height: 40%; /* Reducir aún más para pantallas muy pequeñas */
+  }
+
+  #station-list {
+    height: 60%; /* Más espacio para la lista */
+  }
+}
+
 
